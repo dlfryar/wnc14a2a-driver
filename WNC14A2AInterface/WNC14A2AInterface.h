@@ -171,6 +171,14 @@ class WNC14A2AInterface : public NetworkStack, public NetworkInterface
 {
 public:
 
+    /** Return singleton instance of WNC14A2AInterface if target.network-default-interface-type
+     *  CELLULAR_WNC14A2A is defined. If CELLULAR_WNC14A2A is not
+     *  defined then returns NULL. Implementation is marked as weak.
+     *
+     *  @return WNC14A2AInterface* instance if any
+     */
+    static WNC14A2AInterface *get_default_instance();
+
     /** WNC14A2AInterface Constructor.
      * @param optionally include a pointer to WNCDEBUG object for 
      * debug information to be displayed.
@@ -294,6 +302,8 @@ public:
 
 
 protected:
+
+    static WNC14A2AInterface *get_target_default_instance();
 
     /** Get Host IP by name. 
      *

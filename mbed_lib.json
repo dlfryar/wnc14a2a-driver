@@ -48,24 +48,12 @@
     },
     "target_overrides": {
         "K64F": {
-            "cts": "NC",
-            "lvltranslator": "NC",
-            "power_on": "NC",
-            "reset": "NC",
-            "rx_boot_sel": "NC",
             "rxd": "D1",
-            "txd": "D0",
-            "wakeup": "NC"
+            "txd": "D0"
         },
         "NRF52840_DK": {
-            "cts": "NC",
-            "lvltranslator": "NC",
-            "power_on": "NC",
-            "reset": "NC",
-            "rx_boot_sel": "NC",
             "rxd": "D1",
-            "txd": "D0",
-            "wakeup": "NC"
+            "txd": "D0"
         }
     }
 }
