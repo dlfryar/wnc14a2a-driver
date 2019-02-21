@@ -28,7 +28,7 @@
     
     An Example of usage:
     
-    WncControllerK64F mdm(&wncPinList, &mdmUart, &debugUart);
+    WncController mdm(&wncPinList, &mdmUart, &debugUart);
 
     mdm.enableDebug(true, true);
 

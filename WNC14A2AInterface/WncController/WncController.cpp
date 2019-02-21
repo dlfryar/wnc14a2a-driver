@@ -19,18 +19,18 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE.
     
-    @file          WncControllerK64F.cpp
+    @file          WncController.cpp
     @purpose       Contains K64F and mbed specifics to control the WNC modem using the WncController base class.
     @version       1.0
     @date          July 2016
     @author        Fred Kellerman
 */
 
-#include "WncControllerK64F.h"
+#include "WncController.h"
 
-using namespace WncControllerK64F_fk;
+using namespace WncController_fk;
 
-WncControllerK64F::WncControllerK64F(struct WncGpioPinListK64F * pPins, WncIO * wnc_uart, WNCDebug * debug_uart)
+WncController::WncController(struct WncGpioPinListK64F * pPins, WncIO * wnc_uart, WNCDebug * debug_uart)
 {
     m_logTimer.start(); // Start the log timer now!    
     m_pDbgUart = debug_uart;
@@ -38,7 +38,7 @@ WncControllerK64F::WncControllerK64F(struct WncGpioPinListK64F * pPins, WncIO * 
     m_gpioPinList = *pPins;
 }
 
-bool WncControllerK64F::enterWncTerminalMode(WncIO * pUart, bool echoOn)
+bool WncController::enterWncTerminalMode(WncIO * pUart, bool echoOn)
 {
     if (pUart == NULL)
         return (false);  // Need a uart!
@@ -70,27 +70,27 @@ bool WncControllerK64F::enterWncTerminalMode(WncIO * pUart, bool echoOn)
     }
 }
 
-int WncControllerK64F::putc(char c)
+int WncController::putc(char c)
 {
     return (m_pWncUart->putc(c));
 }
 
-int WncControllerK64F::puts(const char * s)
+int WncController::puts(const char * s)
 {
     return (m_pWncUart->puts(s));
 }
 
-char WncControllerK64F::getc(void)
+char WncController::getc(void)
 {
     return (m_pWncUart->getc());
 }
 
-int WncControllerK64F::charReady(void)
+int WncController::charReady(void)
 {
     return (m_pWncUart->readable());
 }
 
-int WncControllerK64F::dbgWriteChar(char b)
+int WncController::dbgWriteChar(char b)
 {
     if (m_pDbgUart != NULL)
         return (m_pDbgUart->putc(b));
@@ -98,7 +98,7 @@ int WncControllerK64F::dbgWriteChar(char b)
         return (0);
 }
 
-int WncControllerK64F::dbgWriteChars(const char * b)
+int WncController::dbgWriteChars(const char * b)
 {
     if (m_pDbgUart != NULL)
         return (m_pDbgUart->puts(b));
@@ -106,7 +106,7 @@ int WncControllerK64F::dbgWriteChars(const char * b)
         return (0);
 }
 
-bool WncControllerK64F::initWncModem(uint8_t powerUpTimeoutSecs)
+bool WncController::initWncModem(uint8_t powerUpTimeoutSecs)
 {
     // Hard reset the modem (doesn't go through
     // the signal level translator)
@@ -157,49 +157,49 @@ bool WncControllerK64F::initWncModem(uint8_t powerUpTimeoutSecs)
     return (res);
 }
 
-void WncControllerK64F::waitMs(int t)
+void WncController::waitMs(int t)
 {
     wait_ms(t);
 }
 
-void WncControllerK64F::waitUs(int t)
+void WncController::waitUs(int t)
 {
     wait_ms(t);
 }
 
-int  WncControllerK64F::getLogTimerTicks(void)
+int  WncController::getLogTimerTicks(void)
 {
     return (m_logTimer.read_us());
 }
 
-void WncControllerK64F::startTimerA(void)
+void WncController::startTimerA(void)
 {
     m_timerA.start();
     m_timerA.reset();
 }
 
-void WncControllerK64F::stopTimerA(void)
+void WncController::stopTimerA(void)
 {
     m_timerA.stop();
 }
 
-int  WncControllerK64F::getTimerTicksA_mS(void)
+int  WncController::getTimerTicksA_mS(void)
 {
     return (m_timerA.read_ms());
 }
 
-void WncControllerK64F::startTimerB(void)
+void WncController::startTimerB(void)
 {
     m_timerB.start();
     m_timerB.reset();
 }
 
-void WncControllerK64F::stopTimerB(void)
+void WncController::stopTimerB(void)
 {
     m_timerB.stop();
 }
 
-int  WncControllerK64F::getTimerTicksB_mS(void)
+int  WncController::getTimerTicksB_mS(void)
 {
     return (m_timerB.read_ms());
 }

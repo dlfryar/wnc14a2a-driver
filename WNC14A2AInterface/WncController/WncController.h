@@ -19,7 +19,7 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE.
     
-    @file          WncControllerK64F.h
+    @file          WncController.h
     @purpose       Contains K64F and mbed specifics to control the WNC modem using the WncController base class.
     @version       1.0
     @date          July 2016
@@ -36,7 +36,7 @@
 #include "WNCIO.h"
 #include "WncController.h"
 
-namespace WncControllerK64F_fk {
+namespace WncController_fk {
 
 using namespace WncController_fk;
 using namespace std;
@@ -59,14 +59,14 @@ struct WncGpioPinListK64F {
  * @author Fred Kellerman
  * @see API 
  *
- * <b>WncControllerK64F</b> This mbed C++ class is for controlling the WNC
+ * <b>WncController</b> This mbed C++ class is for controlling the WNC
  * Cellular modem from the NXP K64F Freedom board.  It uses the control code
  * from it's base class WncController to handle the WNC Modem AT cmds.  This
  * class fulfills various pure virtual methods of the base class.  The point of
  * this class is to have the platform specific code in it thus isolating the
  * control code logic from any particular platform or OS.
  */
-class WncControllerK64F : public WncController
+class WncController : public WncController
 {
 public:
 
@@ -78,7 +78,7 @@ public:
      * @param wnc_uart - a pointer to the serial uart that is used to communicate with the WNC modem.
      * @param debug_uart - a pointer to a serial uart for the debug output to go out of, if NULL debug will not be output.
      */
-    WncControllerK64F(struct WncGpioPinListK64F * pPins, WncIO * wnc_uart, WNCDebug * debug_uart = NULL);
+    WncController(struct WncGpioPinListK64F * pPins, WncIO * wnc_uart, WNCDebug * debug_uart = NULL);
     
     /**
      *
@@ -96,7 +96,7 @@ public:
 private:
 
     // Disallow copy
-    WncControllerK64F operator=(WncControllerK64F lhs);
+    WncController operator=(WncController lhs);
 
     // Users must define these functionalities:
     virtual int putc(char c);

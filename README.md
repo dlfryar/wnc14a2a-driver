@@ -6,16 +6,14 @@
 Add the following to your `mbed_app.json` file:
 
 ```json
-{
-    "config": {
-        "network-interface":{
-            "help": "options are ETHERNET, WIFI_ESP8266, WIFI_IDW0XX1, WIFI_ODIN, WIFI_RTW, WIFI_WIZFI310, WIFI_ISM43362, MESH_LOWPAN_ND, MESH_THREAD, CELLULAR_ONBOARD, CELLULAR_WNC14A2A",
-            "value": "CELLULAR_WNC14A2A"
-        }
-    },
-    }
-}
+    "target_overrides": {
+        "*": {
+            "AVNET_WNC14A2A.provide-default": true
+    {
 ```
+
+Note: This is an AT&T only modem and requires a special IoT SIM which has a service plan that only works
+in this module.  This module will not work with a generic SIM card.  The APN is set in the driver to m2m.com.attz.
 
 ## Debug settings
 You may also want to specify the following to obtain debug output. This is added to the "config" section:

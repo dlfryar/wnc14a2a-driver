@@ -1,8 +1,12 @@
 {
-    "name": "wnc14a2a",
+    "name": "AVNET_WNC14A2A",
     "config": {
+        "baudrate": {
+            "help": "Serial connection baud rate",
+            "value": 115200
+        },
         "cts": {
-            "help": "Module CTS Line",
+            "help": "WNC doesn't utilize RTS/CTS but the pin is connected",
             "value": "D10"
         },
         "debug": {
@@ -22,51 +26,28 @@
             "value": "D2"
         },
         "provide-default": {
-            "help": "Provide default network interface. [true/false]",
+            "help": "Provide as default CellularDevice [true/false]",
             "value": false
         },
         "reset": {
             "help": "Module Reset Line",
             "value": "D8"
         },
+        "rx": {
+            "help": "RX pin for serial connection. D0 assumed if Arduino Form Factor, needs to be set/overwritten otherwise.",
+            "value": "D0"
+        },
         "rx_boot_sel": {
             "help": "Module RX Boot Select Line",
             "value": "D1"
         },
-        "rxd": {
-            "help": "Module RX Serial Line",
-            "value": "D11"
-        },
-        "txd": {
-            "help": "Module TX Serial Line",
-            "value": "D12"
+        "tx": {
+            "help": "TX pin for serial connection. D1 assumed if Arduino Form Factor, needs to be set/overwritten otherwise.",
+            "value": "D1"
         },
         "wakeup": {
             "help": "Module Wakeup Line",
             "value": "D6"
         }
-    },
-    "target_overrides": {
-        "K64F": {
-            "cts": "NC",
-            "lvltranslator": "NC",
-            "power_on": "NC",
-            "reset": "NC",
-            "rx_boot_sel": "NC",
-            "rxd": "D1",
-            "txd": "D0",
-            "wakeup": "NC"
-        },
-        "NRF52840_DK": {
-            "cts": "NC",
-            "lvltranslator": "NC",
-            "power_on": "NC",
-            "reset": "NC",
-            "rx_boot_sel": "NC",
-            "rxd": "D1",
-            "txd": "D0",
-            "wakeup": "NC"
-        }
     }
 }
-

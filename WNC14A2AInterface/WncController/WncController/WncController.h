@@ -70,7 +70,7 @@ struct WncIpStats
  *  it is also not multi-thread safe.  There are no OS specific
  *  entities being used, there are pure virtual methods that an 
  *  inheriting class must fulfill.  That inheriting class will have
- *  OS and platform specific entities.  See WncControllerK64F for an
+ *  OS and platform specific entities.  See WncController for an
  *  example for the NXP K64F Freedom board.
  */
 class WncController

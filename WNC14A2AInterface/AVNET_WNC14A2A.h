@@ -19,7 +19,7 @@
 */
 
 /**
-*  @file WNC14A2AInterface.h
+*  @file AVNET_WNC14A2A.h
 *  @brief Implements a standard NetworkInterface class for use with WNC M14A2A 
 *  data module. 
 *
@@ -29,17 +29,17 @@
 *  
 */
  
-#ifndef WNC14A2A_INTERFACE_H
-#define WNC14A2A_INTERFACE_H
+#ifndef AVNET_WNC14A2A_INTERFACE_H
+#define AVNET_WNC14A2A_INTERFACE_H
 
 #include <stdint.h>
 
 #include "mbed.h"
 #include "Callback.h"
 #include "WNCDebug.h"
-#include "WncControllerK64F/WncControllerK64F.h"
+#include "WncController/WncController.h"
 
-#define WNC14A2A_SOCKET_COUNT WncController::MAX_NUM_WNC_SOCKETS
+#define AVNET_WNC14A2A_SOCKET_COUNT WncController::MAX_NUM_WNC_SOCKETS
 
 typedef struct smsmsg_t {
         string number;
@@ -154,7 +154,7 @@ typedef struct tx_event_t {
 
 #define CHK_WNCFE(x,y)    if( x ){FATAL_WNC_ERROR(y);}
 
-#define FIRMWARE_REV(x) (((WNC14A2AInterface*)x)->getWNCRev())
+#define FIRMWARE_REV(x) (((AVNET_WNC14A2A*)x)->getWNCRev())
 #define DBGMSG_DRV	0x04
 #define DBGMSG_EQ	0x08
 #define DBGMSG_SMS	0x10
@@ -164,19 +164,19 @@ typedef struct tx_event_t {
 
 using namespace WncController_fk;
  
-/** WNC14A2AInterface class
- *  Implementation of the NetworkInterface for WNC14A2A 
+/** AVNET_WNC14A2A class
+ *  Implementation of the NetworkInterface for AVNET_WNC14A2A 
  */
-class WNC14A2AInterface : public NetworkStack, public NetworkInterface
+class AVNET_WNC14A2A : public NetworkStack, public NetworkInterface
 {
 public:
 
-    /** WNC14A2AInterface Constructor.
+    /** AVNET_WNC14A2A Constructor.
      * @param optionally include a pointer to WNCDEBUG object for 
      * debug information to be displayed.
      */
-    WNC14A2AInterface(WNCDebug *_dbgUart = NULL);
-    virtual ~WNC14A2AInterface();
+    AVNET_WNC14A2A(WNCDebug *_dbgUart = NULL);
+    virtual ~AVNET_WNC14A2A();
 
     /** Set the cellular network credentials
      *
@@ -419,7 +419,7 @@ protected:
     
     /** get the status of internal errors
      *
-     *  @brief Called after any WNC14A2A operation to determine error specifics 
+     *  @brief Called after any AVNET_WNC14A2A operation to determine error specifics 
      *  @param none.
      */
     uint16_t wnc14a2a_chk_error(void) { return m_errors; }
@@ -427,13 +427,13 @@ protected:
 private:
 
     //! WncController Class for interacting with the 14A2a hardware
-    friend class WncControllerK64F;  
+    friend class WncController;  
 
     bool     m_wncpoweredup;                //track if WNC has been power-up
     unsigned m_debug;
 
     WncIpStats myNetStats;                  //maintaint the network statistics
-    WncControllerK64F_fk::WncControllerK64F *m_pwnc; //pointer to the WncController instance
+    WncController_fk::WncController *m_pwnc; //pointer to the WncController instance
 
     WNCDebug *_debugUart;                     // Serial object for parser to communicate with radio
     char *_fatal_err_loc;                   // holds string containing location of fatal error
@@ -456,9 +456,9 @@ private:
     void _dbOut(const char *format, ...);
     void _dbDump_arry( const uint8_t* data, unsigned int size );
 
-    WNCSOCKET _sockets[WNC14A2A_SOCKET_COUNT];  //WNC supports 8 open sockets but driver only supports 1 currently
-    TXEVENT   _socTxS[WNC14A2A_SOCKET_COUNT];
-    RXEVENT   _socRxS[WNC14A2A_SOCKET_COUNT];
+    WNCSOCKET _sockets[AVNET_WNC14A2A_SOCKET_COUNT];  //WNC supports 8 open sockets but driver only supports 1 currently
+    TXEVENT   _socTxS[AVNET_WNC14A2A_SOCKET_COUNT];
+    RXEVENT   _socRxS[AVNET_WNC14A2A_SOCKET_COUNT];
     Thread    _smsThread, _eqThread;            //Event Queue thread for SMS and Rx/Tx data
     Mutex     _pwnc_mutex;                      
     int       _active_socket;

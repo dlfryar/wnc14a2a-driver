@@ -20,15 +20,15 @@
  */
  
 /**
-*   @file   WNC14A2AInterface.cpp
-*   @brief  WNC14A2A implementation of NetworkInterfaceAPI for Mbed OS
+*   @file   AVNET_WNC14A2A.cpp
+*   @brief  AVNET_WNC14A2A implementation of NetworkInterfaceAPI for Mbed OS
 *
 *   @author James Flynn
 *
 *   @date   1-Feb-2018
 */
 
-#include "WNC14A2AInterface.h"
+#include "AVNET_WNC14A2A.h"
 #include <Thread.h>
 #include "mbed_events.h"
 #include "WNCIO.h"
@@ -112,8 +112,8 @@
 #define DBGMSG_SMS	               0x10                     //driver SMS info
 #define DBGMSG_ARRY                    0x20                     //dump driver arrays
 
-#define WNC14A2A_READ_TIMEOUTMS        4000                     //duration to read no data to receive in MS
-#define WNC14A2A_COMMUNICATION_TIMEOUT 100                      //how long (ms) to wait for a WNC14A2A connect response
+#define AVNET_WNC14A2A_READ_TIMEOUTMS        4000                     //duration to read no data to receive in MS
+#define AVNET_WNC14A2A_COMMUNICATION_TIMEOUT 100                      //how long (ms) to wait for a AVNET_WNC14A2A connect response
 #define WNC_BUFF_SIZE                  1500                     //total number of bytes in a single WNC call
 #define UART_BUFF_SIZE                 4096                     //size of our internal uart buffer.. define in *.json file
 
@@ -135,8 +135,8 @@
 #define TX_COMPLETE                    23
 
 #if MBED_CONF_APP_WNC_DEBUG == true
-#define debugOutput(...)      WNC14A2AInterface::_dbOut(__VA_ARGS__)
-#define debugDump_arry(...)   WNC14A2AInterface::_dbDump_arry(__VA_ARGS__)
+#define debugOutput(...)      AVNET_WNC14A2A::_dbOut(__VA_ARGS__)
+#define debugDump_arry(...)   AVNET_WNC14A2A::_dbDump_arry(__VA_ARGS__)
 #else
 #define debugOutput(...)      {/* __VA_ARGS__ */}
 #define debugDump_arry(...)   {/* __VA_ARGS__ */}
@@ -150,21 +150,21 @@
 *           NSAPI_ERROR_UNSUPPORTED 
 *           NSAPI_ERROR_DEVICE_ERROR
 */
-WNC14A2AInterface::WNC14A2AInterface(WNCDebug *dbg) : 
+AVNET_WNC14A2A::AVNET_WNC14A2A(WNCDebug *dbg) : 
  m_wncpoweredup(0),
  m_debug(0),
  m_pwnc(NULL),
  m_errors(NSAPI_ERROR_OK),
  m_smsmoning(0),
  _active_socket(0),
- mdmUart(MBED_CONF_WNC14A2A_TXD,MBED_CONF_WNC14A2A_RXD,115200),
+ mdmUart(MBED_CONF_AVNET_WNC14A2A_TX,MBED_CONF_AVNET_WNC14A2A_RX,115200),
  wnc_io(&mdmUart)
 {
     _debugUart = dbg;           
     memset(_mac_address,0x00,sizeof(_mac_address));
     memset(_socTxS,0x00,sizeof(_socTxS));
     memset(_socRxS,0x00,sizeof(_socRxS));
-    for( unsigned int i=0; i<WNC14A2A_SOCKET_COUNT; i++ ) {
+    for( unsigned int i=0; i<AVNET_WNC14A2A_SOCKET_COUNT; i++ ) {
         _sockets[i].socket = i;
         _sockets[i].addr = NULL;
         _sockets[i].opened=false;
@@ -177,17 +177,17 @@ WNC14A2AInterface::WNC14A2AInterface(WNCDebug *dbg) :
 }
 
 //! Standard destructor
-WNC14A2AInterface::~WNC14A2AInterface()
+AVNET_WNC14A2A::~AVNET_WNC14A2A()
 {
     if( m_pwnc )
-        delete m_pwnc;  //free the existing WncControllerK64F object
+        delete m_pwnc;  //free the existing WncController object
 }
 
 // - - - - - - - 
 // SMS Functions
 // - - - - - - - 
 
-char* WNC14A2AInterface::getSMSnbr( void ) 
+char* AVNET_WNC14A2A::getSMSnbr( void ) 
 {
     char * ret=NULL;
     string iccid_str;
@@ -211,20 +211,20 @@ char* WNC14A2AInterface::getSMSnbr( void )
     return ret;
 }
 
-void WNC14A2AInterface::sms_attach(void (*callback)(IOTSMS *))
+void AVNET_WNC14A2A::sms_attach(void (*callback)(IOTSMS *))
 {
     debugOutput("ENTER/EXIT sms_attach()");
     _sms_cb = callback;
 }
 
-void WNC14A2AInterface::sms_start(void)
+void AVNET_WNC14A2A::sms_start(void)
 {
     _pwnc_mutex.lock();                     
     m_pwnc->deleteSMSTextFromMem('*');       
     _pwnc_mutex.unlock();
 }
 
-void WNC14A2AInterface::sms_listen(uint16_t pp)
+void AVNET_WNC14A2A::sms_listen(uint16_t pp)
 {
     debugOutput("ENTER sms_listen(%d)",pp);
 
@@ -237,13 +237,13 @@ void WNC14A2AInterface::sms_listen(uint16_t pp)
     _smsThread.start(callback(&sms_queue,&EventQueue::dispatch_forever));
 
     sms_start();
-    sms_queue.call_every(pp*1000, mbed::Callback<void()>((WNC14A2AInterface*)this,&WNC14A2AInterface::handle_sms_event));
+    sms_queue.call_every(pp*1000, mbed::Callback<void()>((AVNET_WNC14A2A*)this,&AVNET_WNC14A2A::handle_sms_event));
 
     m_smsmoning = true;
     debugOutput("EXIT sms_listen()");
 }
 
-void WNC14A2AInterface::handle_sms_event()
+void AVNET_WNC14A2A::handle_sms_event()
 {
     int msgs_available;
     debugOutput("ENTER handle_sms_event()");
@@ -266,7 +266,7 @@ void WNC14A2AInterface::handle_sms_event()
     debugOutput("EXIT handle_sms_event");
 }
 
-int WNC14A2AInterface::getSMS(IOTSMS **pmsg) 
+int AVNET_WNC14A2A::getSMS(IOTSMS **pmsg) 
 {
     int msgs_available=0;
 
@@ -296,7 +296,7 @@ int WNC14A2AInterface::getSMS(IOTSMS **pmsg)
 }
 
 
-int WNC14A2AInterface::sendIOTSms(const string& number, const string& message) 
+int AVNET_WNC14A2A::sendIOTSms(const string& number, const string& message) 
 {
     debugOutput("ENTER sendIOTSms(%s,%s)",number.c_str(), message.c_str());
 
@@ -317,13 +317,13 @@ int WNC14A2AInterface::sendIOTSms(const string& number, const string& message)
 // WNC Control Functions
 // - - - - - - - - - - -
 
-nsapi_error_t WNC14A2AInterface::connect()   //can be called with no arguments or with arguments
+nsapi_error_t AVNET_WNC14A2A::connect()   //can be called with no arguments or with arguments
 {
     debugOutput("ENTER connect(void)");
     return connect(NULL,NULL,NULL);
 }
 
-nsapi_error_t WNC14A2AInterface::connect(const char *apn, const char *username, const char *password) 
+nsapi_error_t AVNET_WNC14A2A::connect(const char *apn, const char *username, const char *password) 
 {
     //
     // GPIO Pins used to initialize the WNC parts on the Avnet WNC Shield
@@ -334,15 +334,15 @@ nsapi_error_t WNC14A2AInterface::connect(const char *apn, const char *username, 
     // 0 = disabled (all signals high impedence, 1 = translation active
     // WNC doesn't utilize RTS/CTS but the pin is connected
 
-    static DigitalOut  mdm_uart2_rx_boot_mode_sel(MBED_CONF_WNC14A2A_RX_BOOT_SEL);
-    static DigitalOut  mdm_power_on(MBED_CONF_WNC14A2A_POWER_ON);
-    static DigitalOut  mdm_wakeup_in(MBED_CONF_WNC14A2A_WAKEUP);
-    static DigitalOut  mdm_reset(MBED_CONF_WNC14A2A_RESET);
-    static DigitalOut  shield_3v3_1v8_sig_trans_ena(MBED_CONF_WNC14A2A_LVLTRANSLATOR);
-    static DigitalOut  mdm_uart1_cts(MBED_CONF_WNC14A2A_CTS);
+    static DigitalOut  mdm_uart2_rx_boot_mode_sel(MBED_CONF_AVNET_WNC14A2A_RX_BOOT_SEL);
+    static DigitalOut  mdm_power_on(MBED_CONF_AVNET_WNC14A2A_POWER_ON);
+    static DigitalOut  mdm_wakeup_in(MBED_CONF_AVNET_WNC14A2A_WAKEUP);
+    static DigitalOut  mdm_reset(MBED_CONF_AVNET_WNC14A2A_RESET);
+    static DigitalOut  shield_3v3_1v8_sig_trans_ena(MBED_CONF_AVNET_WNC14A2A_LVLTRANSLATOR);
+    static DigitalOut  mdm_uart1_cts(MBED_CONF_AVNET_WNC14A2A_CTS);
 
     //! associations for the controller class to use. Order of pins is critical.
-    static WncControllerK64F_fk::WncGpioPinListK64F wncPinList = { 
+    static WncController_fk::WncGpioPinListK64F wncPinList = { 
         &mdm_uart2_rx_boot_mode_sel,
         &mdm_power_on,
         &mdm_wakeup_in,
@@ -354,7 +354,7 @@ nsapi_error_t WNC14A2AInterface::connect(const char *apn, const char *username, 
     debugOutput("ENTER connect(apn,user,pass)");
 
     if( m_pwnc == NULL ) {
-        m_pwnc = new WncControllerK64F_fk::WncControllerK64F(&wncPinList, &wnc_io, _debugUart);
+        m_pwnc = new WncController_fk::WncController(&wncPinList, &wnc_io, _debugUart);
         if( !m_pwnc ) {
             debugOutput("FAILED to open WncControllerK64!");
             m_errors = NSAPI_ERROR_DEVICE_ERROR;
@@ -389,7 +389,7 @@ nsapi_error_t WNC14A2AInterface::connect(const char *apn, const char *username, 
     return (!m_errors)? NSAPI_ERROR_NO_CONNECTION : NSAPI_ERROR_OK;
 }
 
-const char* WNC14A2AInterface::getWNCRev(void)
+const char* AVNET_WNC14A2A::getWNCRev(void)
 {
     if( m_pwnc ) {
         const char * str = m_pwnc->getFirmRev();
@@ -400,7 +400,7 @@ const char* WNC14A2AInterface::getWNCRev(void)
 }
 
 
-const char *WNC14A2AInterface::get_ip_address()
+const char *AVNET_WNC14A2A::get_ip_address()
 {
     const char *ptr=NULL; 
 
@@ -422,7 +422,7 @@ const char *WNC14A2AInterface::get_ip_address()
     return ptr;
 }
  
-const char *WNC14A2AInterface::get_mac_address()
+const char *AVNET_WNC14A2A::get_mac_address()
 {
     string mac, str;
     debugOutput("ENTER get_mac_address()");
@@ -444,18 +444,18 @@ const char *WNC14A2AInterface::get_mac_address()
     return NULL;
 }
 
-NetworkStack *WNC14A2AInterface::get_stack() {
+NetworkStack *AVNET_WNC14A2A::get_stack() {
     debugOutput("ENTER/EXIT get_stack()");
     return this;
 }
 
-nsapi_error_t WNC14A2AInterface::disconnect() 
+nsapi_error_t AVNET_WNC14A2A::disconnect() 
 {
     debugOutput("ENTER/EXIT disconnect()");
     return NSAPI_ERROR_OK;
 }
 
-nsapi_error_t WNC14A2AInterface::set_credentials(const char *apn, const char *username, const char *password) 
+nsapi_error_t AVNET_WNC14A2A::set_credentials(const char *apn, const char *username, const char *password) 
 {
 
     m_errors=NSAPI_ERROR_OK;
@@ -476,7 +476,7 @@ nsapi_error_t WNC14A2AInterface::set_credentials(const char *apn, const char *us
     return m_errors;
 }
 
-bool WNC14A2AInterface::registered()
+bool AVNET_WNC14A2A::registered()
 {
     debugOutput("ENTER registered()");
     m_errors=NSAPI_ERROR_OK;
@@ -496,7 +496,7 @@ bool WNC14A2AInterface::registered()
 }
 
 
-void WNC14A2AInterface::doDebug( int v )
+void AVNET_WNC14A2A::doDebug( int v )
 {
     #if MBED_CONF_APP_WNC_DEBUG == true
     m_debug= v;
@@ -512,7 +512,7 @@ void WNC14A2AInterface::doDebug( int v )
 * @return void
 * @date 1-Feb-2018
 */
-void WNC14A2AInterface::_dbDump_arry( const uint8_t* data, unsigned int size )
+void AVNET_WNC14A2A::_dbDump_arry( const uint8_t* data, unsigned int size )
 {
     #if MBED_CONF_APP_WNC_DEBUG == true
     char buffer[256];
@@ -537,7 +537,7 @@ void WNC14A2AInterface::_dbDump_arry( const uint8_t* data, unsigned int size )
     #endif
 }
 
-void WNC14A2AInterface::_dbOut(const char *format, ...) 
+void AVNET_WNC14A2A::_dbOut(const char *format, ...) 
 {
     #if MBED_CONF_APP_WNC_DEBUG == true
     char buffer[256];
@@ -564,7 +564,7 @@ void WNC14A2AInterface::_dbOut(const char *format, ...)
 // WNC Socket Based operatioins
 // - - - - - - - - - - - - - - -
 
-nsapi_error_t WNC14A2AInterface::gethostbyname(const char* name, SocketAddress *address, nsapi_version_t version)
+nsapi_error_t AVNET_WNC14A2A::gethostbyname(const char* name, SocketAddress *address, nsapi_version_t version)
 {
     nsapi_error_t ret = NSAPI_ERROR_OK;
     char ipAddrStr[25];
@@ -593,18 +593,18 @@ nsapi_error_t WNC14A2AInterface::gethostbyname(const char* name, SocketAddress *
     return (m_errors = ret);
 }
 
-int WNC14A2AInterface::socket_open(void **handle, nsapi_protocol_t proto) 
+int AVNET_WNC14A2A::socket_open(void **handle, nsapi_protocol_t proto) 
 {
     unsigned int i;
 
     debugOutput("ENTER socket_open()");
 
     //find the next available socket...
-    for( i=0; i<WNC14A2A_SOCKET_COUNT; i++ )
+    for( i=0; i<AVNET_WNC14A2A_SOCKET_COUNT; i++ )
         if( !_sockets[i].opened )
             break;
 
-    if( i == WNC14A2A_SOCKET_COUNT ) {
+    if( i == AVNET_WNC14A2A_SOCKET_COUNT ) {
         m_errors=NSAPI_ERROR_NO_SOCKET;
         return -1;
         }
@@ -628,7 +628,7 @@ int WNC14A2AInterface::socket_open(void **handle, nsapi_protocol_t proto)
     return (m_errors = NSAPI_ERROR_OK);
 }
 
-int WNC14A2AInterface::socket_connect(void *handle, const SocketAddress &address) 
+int AVNET_WNC14A2A::socket_connect(void *handle, const SocketAddress &address) 
 {
     WNCSOCKET *wnc = (WNCSOCKET *)handle;   
     int err = 0;
@@ -642,7 +642,7 @@ int WNC14A2AInterface::socket_connect(void *handle, const SocketAddress &address
                                 
     _pwnc_mutex.lock();
     if( wnc->url.empty() ) 
-        err = !m_pwnc->openSocketIpAddr(wnc->socket, address.get_ip_address(), address.get_port(), wnc->proto, WNC14A2A_COMMUNICATION_TIMEOUT);
+        err = !m_pwnc->openSocketIpAddr(wnc->socket, address.get_ip_address(), address.get_port(), wnc->proto, AVNET_WNC14A2A_COMMUNICATION_TIMEOUT);
      else 
         err = !m_pwnc->openSocketUrl(wnc->socket, wnc->url.c_str(), wnc->addr.get_port(), wnc->proto);
     _pwnc_mutex.unlock();
@@ -659,7 +659,7 @@ int WNC14A2AInterface::socket_connect(void *handle, const SocketAddress &address
     return err;
 }
 
-int WNC14A2AInterface::socket_close(void *handle)
+int AVNET_WNC14A2A::socket_close(void *handle)
 {
     WNCSOCKET *wnc = (WNCSOCKET*)handle;
     RXEVENT *rxsock;
@@ -700,7 +700,7 @@ int WNC14A2AInterface::socket_close(void *handle)
 }
 
 
-void WNC14A2AInterface::socket_attach(void *handle, void (*callback)(void *), void *data)
+void AVNET_WNC14A2A::socket_attach(void *handle, void (*callback)(void *), void *data)
 {
     WNCSOCKET *wnc = (WNCSOCKET *)handle;
 
@@ -709,7 +709,7 @@ void WNC14A2AInterface::socket_attach(void *handle, void (*callback)(void *), vo
     wnc->_cb_data = data;
 }
 
-int WNC14A2AInterface::socket_sendto(void *handle, const SocketAddress &address, const void *data, unsigned size)
+int AVNET_WNC14A2A::socket_sendto(void *handle, const SocketAddress &address, const void *data, unsigned size)
 {
     WNCSOCKET *wnc = (WNCSOCKET *)handle;
     
@@ -726,7 +726,7 @@ int WNC14A2AInterface::socket_sendto(void *handle, const SocketAddress &address,
     return socket_send(wnc, data, size);
 }
 
-int WNC14A2AInterface::socket_recvfrom(void *handle, SocketAddress *address, void *buffer, unsigned size)
+int AVNET_WNC14A2A::socket_recvfrom(void *handle, SocketAddress *address, void *buffer, unsigned size)
 {
     WNCSOCKET *wnc = (WNCSOCKET *)handle;
     debugOutput("ENTER socket_recvfrom()");
@@ -746,14 +746,14 @@ int WNC14A2AInterface::socket_recvfrom(void *handle, SocketAddress *address, voi
 }
 
 
-int inline WNC14A2AInterface::socket_accept(nsapi_socket_t server, nsapi_socket_t *handle, SocketAddress *address) 
+int inline AVNET_WNC14A2A::socket_accept(nsapi_socket_t server, nsapi_socket_t *handle, SocketAddress *address) 
 {
     debugOutput("ENTER/EXIT socket_accept() -- not supported");
     m_errors = NSAPI_ERROR_UNSUPPORTED;
     return -1;
 }
 
-int inline WNC14A2AInterface::socket_bind(void *handle, const SocketAddress &address) 
+int inline AVNET_WNC14A2A::socket_bind(void *handle, const SocketAddress &address) 
 {
     WNCSOCKET *wnc = (WNCSOCKET *)handle;
 
@@ -763,7 +763,7 @@ int inline WNC14A2AInterface::socket_bind(void *handle, const SocketAddress &add
 }
 
 
-int inline WNC14A2AInterface::socket_listen(void *handle, int backlog)
+int inline AVNET_WNC14A2A::socket_listen(void *handle, int backlog)
 {
    debugOutput("ENTER/EXIT socket_listen() -- not supported");
     m_errors = NSAPI_ERROR_UNSUPPORTED;
@@ -771,7 +771,7 @@ int inline WNC14A2AInterface::socket_listen(void *handle, int backlog)
 }
 
 
-int WNC14A2AInterface::socket_send(void *handle, const void *data, unsigned size) 
+int AVNET_WNC14A2A::socket_send(void *handle, const void *data, unsigned size) 
 {
     WNCSOCKET *wnc = (WNCSOCKET *)handle;
     TXEVENT *txsock;
@@ -798,7 +798,7 @@ int WNC14A2AInterface::socket_send(void *handle, const void *data, unsigned size
 
             if( !tx_event(txsock) ) {   //if we didn't sent all the data at once, continue in background
                 txsock->m_tx_wnc_state = TX_ACTIVE;
-                wnc_queue.call_in(EQ_FREQ,mbed::Callback<void()>((WNC14A2AInterface*)this,&WNC14A2AInterface::wnc_eq_event));
+                wnc_queue.call_in(EQ_FREQ,mbed::Callback<void()>((AVNET_WNC14A2A*)this,&AVNET_WNC14A2A::wnc_eq_event));
                 return NSAPI_ERROR_WOULD_BLOCK;
                 }
             // fall through 
@@ -818,7 +818,7 @@ int WNC14A2AInterface::socket_send(void *handle, const void *data, unsigned size
         }
 }
 
-int WNC14A2AInterface::tx_event(TXEVENT *ptr)
+int AVNET_WNC14A2A::tx_event(TXEVENT *ptr)
 {
     debugOutput("ENTER tx_event(), socket %d",ptr->m_tx_socket);
 
@@ -847,7 +847,7 @@ int WNC14A2AInterface::tx_event(TXEVENT *ptr)
     return 1;
 }
 
-int WNC14A2AInterface::socket_recv(void *handle, void *data, unsigned size) 
+int AVNET_WNC14A2A::socket_recv(void *handle, void *data, unsigned size) 
 {
     WNCSOCKET *wnc = (WNCSOCKET *)handle;
     RXEVENT *rxsock;
@@ -876,7 +876,7 @@ int WNC14A2AInterface::socket_recv(void *handle, void *data, unsigned size)
 
             if( !rx_event(rxsock) ){
                 rxsock->m_rx_wnc_state = READ_ACTIVE;
-                wnc_queue.call_in(EQ_FREQ,mbed::Callback<void()>((WNC14A2AInterface*)this,&WNC14A2AInterface::wnc_eq_event));
+                wnc_queue.call_in(EQ_FREQ,mbed::Callback<void()>((AVNET_WNC14A2A*)this,&AVNET_WNC14A2A::wnc_eq_event));
                 return NSAPI_ERROR_WOULD_BLOCK;
                 }
             // fall through 
@@ -899,7 +899,7 @@ int WNC14A2AInterface::socket_recv(void *handle, void *data, unsigned size)
 }
 
 
-int WNC14A2AInterface::rx_event(RXEVENT *ptr)
+int AVNET_WNC14A2A::rx_event(RXEVENT *ptr)
 {
     debugOutput("ENTER rx_event() for socket %d", ptr->m_rx_socket);
     _pwnc_mutex.lock();
@@ -916,7 +916,7 @@ int WNC14A2AInterface::rx_event(RXEVENT *ptr)
         ptr->m_rx_callback = NULL;
         return 1;
         }
-    if( ++ptr->m_rx_timer > (WNC14A2A_READ_TIMEOUTMS/EQ_FREQ) && !ptr->m_rx_disTO ) {  //timed out waiting, return 0 to caller
+    if( ++ptr->m_rx_timer > (AVNET_WNC14A2A_READ_TIMEOUTMS/EQ_FREQ) && !ptr->m_rx_disTO ) {  //timed out waiting, return 0 to caller
         debugOutput("EXIT rx_event(), rx data TIME-OUT!");
         ptr->m_rx_wnc_state = DATA_AVAILABLE;
         ptr->m_rx_return_cnt = 0;
@@ -931,18 +931,18 @@ int WNC14A2AInterface::rx_event(RXEVENT *ptr)
     return 0;
 }
 
-void WNC14A2AInterface::wnc_eq_event()
+void AVNET_WNC14A2A::wnc_eq_event()
 {
     int done = 1;
     bool goSlow = true;
 
-    for( unsigned int i=0; i<WNC14A2A_SOCKET_COUNT; i++ ) {
+    for( unsigned int i=0; i<AVNET_WNC14A2A_SOCKET_COUNT; i++ ) {
         if( _socRxS[i].m_rx_wnc_state == READ_ACTIVE || _socRxS[i].m_rx_disTO) {
             done &= rx_event(&_socRxS[i]);
-            goSlow &= ( _socRxS[i].m_rx_timer > ((WNC14A2A_READ_TIMEOUTMS/EQ_FREQ)*(EQ_FREQ_SLOW/EQ_FREQ)) );
+            goSlow &= ( _socRxS[i].m_rx_timer > ((AVNET_WNC14A2A_READ_TIMEOUTMS/EQ_FREQ)*(EQ_FREQ_SLOW/EQ_FREQ)) );
 
             if( goSlow ) 
-                _socRxS[i].m_rx_timer = (WNC14A2A_READ_TIMEOUTMS/EQ_FREQ)*(EQ_FREQ_SLOW/EQ_FREQ);
+                _socRxS[i].m_rx_timer = (AVNET_WNC14A2A_READ_TIMEOUTMS/EQ_FREQ)*(EQ_FREQ_SLOW/EQ_FREQ);
             }
 
         if( _socTxS[i].m_tx_wnc_state == TX_ACTIVE ) {
@@ -953,13 +953,13 @@ void WNC14A2AInterface::wnc_eq_event()
         }
 
     if( !done )  
-        wnc_queue.call_in((goSlow?EQ_FREQ_SLOW:EQ_FREQ),mbed::Callback<void()>((WNC14A2AInterface*)this,&WNC14A2AInterface::wnc_eq_event));
+        wnc_queue.call_in((goSlow?EQ_FREQ_SLOW:EQ_FREQ),mbed::Callback<void()>((AVNET_WNC14A2A*)this,&AVNET_WNC14A2A::wnc_eq_event));
 }
 
-#if MBED_CONF_WNC14A2A_PROVIDE_DEFAULT
+#if MBED_CONF_AVNET_WNC14A2A_PROVIDE_DEFAULT
 
-WNC14A2AInterface *WNC14A2AInterface::get_default_instance() {
-    static WNC14A2AInterface wnc;
+AVNET_WNC14A2A *AVNET_WNC14A2A::get_default_instance() {
+    static AVNET_WNC14A2A wnc;
     return &wnc;
 }
 
